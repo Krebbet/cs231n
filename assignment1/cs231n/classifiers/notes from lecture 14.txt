@@ -1,0 +1,40 @@
+we are clay... write about it
+
+-> We need to extract the size of the image from the output of a classification...
+
+At some point there needs to be a transformation into a feature space 
+that is size agnostic to initial image size
+
+1) use attention to build up a feature space....
+
+2) use the feature space to predict the class, but not
+ the output image.... ie. it is the size of the 'attention space'
+ that defines the inputs into the rest of the image, in that manner
+ we do not need to build netoworks based on the size of the image and
+ the nec. scaling can be learned through learned parameters in the 'attention'
+ function.
+ 
+ 
+ --> Idea to get rid of some linearity problems at some end point of a 
+ feature space:
+ 
+ - We want to simplify the feature space, ie. we probably do not 
+ want a real number for each feature
+	- this will be prone to over fitting 
+	- it will be more difficult to build on
+	
+- SO instead we level set it, find the expected 
+	variance on the outputs and split them into N
+	levels. then the output is some round function of 
+	the input feature space.
+	
+	
+Papers
+
+Auto-Encoding Variational Bayes
+- Interesting idea: let the decoder output 
+	some type of statistical thing--> ie. direct the types of features we want...
+	
+Deep Inverse Graphics Networks
+
+Generative Adversarial Network
