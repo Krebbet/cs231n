@@ -171,7 +171,7 @@ class FullyConnectedNet(object):
       model.
     """
     self.use_batchnorm = use_batchnorm
-    self.use_dropout = dropout > 0
+    self.use_dropout = (dropout > 0) and (dropout < 1) 
     self.reg = reg
     self.num_layers = 1 + len(hidden_dims)
     self.dtype = dtype
@@ -205,6 +205,8 @@ class FullyConnectedNet(object):
     
     self.params[b_lbl] = np.zeros(num_classes) 
     self.params[W_lbl] = np.random.normal(0,weight_scale,(last_dim,num_classes))
+    
+    
   
   
     ############################################################################
@@ -227,7 +229,16 @@ class FullyConnectedNet(object):
     # pass of the second batch normalization layer, etc.
     self.bn_params = []
     if self.use_batchnorm:
-      self.bn_params = [{'mode': 'train'} for i in xrange(self.num_layers - 1)]
+      self.bn_params = [{'mode': 'train'} for i in range(self.num_layers - 1)]
+      
+      #init batch norm params
+      for i,h_dim in enumerate(hidden_dims):
+        gamma_lbl = "gamma%d" % (i+1)
+        beta_lbl = "beta%d" % (i+1)
+        self.params[gamma_lbl] = np.ones(h_dim) 
+        self.params[beta_lbl] = np.zeros(h_dim)
+
+      
     
     # Cast all parameters to the correct datatype
     for k, v in self.params.items():
@@ -266,8 +277,6 @@ class FullyConnectedNet(object):
     ############################################################################
     # Iterate through each layer
     # Which goes {affine - [batch norm] - relu - [dropout]} x (L - 1) - affine - softmax
-    
-    
     self.affine_cache = {}
     self.relu_cache = {}
     self.dropout_cache = {}
@@ -279,6 +288,11 @@ class FullyConnectedNet(object):
       # grab your weights and biases
       b = self.params[("b%d" % (i+1))]
       W = self.params[("W%d" % (i+1))]
+      if self.use_batchnorm:
+        gamma = self.params[("gamma%d" % (i+1))]
+        beta  = self.params[("beta%d" % (i+1))]
+      
+      
       cache_name = 'c%d' % (i+1)
       
       # get reg loss while we have it
@@ -286,11 +300,18 @@ class FullyConnectedNet(object):
 
       #affine 
       x, self.affine_cache[cache_name] = affine_forward(x,W,b)
+      
       #batchnorm
-      #LATER
+      if self.use_batchnorm:
+        x, self.batchnorm_cache[cache_name] =  batchnorm_forward(x, gamma, beta, self.bn_params[i])
+      
+      
       #relu
       x, self.relu_cache[cache_name] = relu_forward(x)
+      
       # drop out
+      if self.use_dropout:
+        x, self.dropout_cache[cache_name] = dropout_forward(x, dropout_param):
       #LATER
     
     #now do output 
@@ -338,14 +359,25 @@ class FullyConnectedNet(object):
     #regularize W
     grads[W_lbl] += self.reg*self.params[W_lbl] 
     for i in range(self.num_layers -1, 0, -1): 
+      # generate param labels
       cache_name = 'c%d' % i
       W_lbl = 'W%d' % (i)
       b_lbl = 'b%d' % (i)
+      gamma_lbl = 'gamma%d' % (i)
+      beta_lbl = 'beta%d' % (i)
       
+      #backprop and collect param grads
       # drop out
+      # drop out
+      if self.use_dropout:
+        dscores = dropout_backward(dscores, self.dropout_cache[cache_name])
+       
+      
       #relu
       dscores = relu_backward(dscores, self.relu_cache[cache_name])
       #batchnorm
+      if self.use_batchnorm:
+        dscores, grads[gamma_lbl], grads[beta_lbl] = batchnorm_backward(dscores, self.batchnorm_cache[cache_name])
       #affine 
       dscores, grads[W_lbl], grads[b_lbl] = affine_backward(dscores, self.affine_cache[cache_name])
         

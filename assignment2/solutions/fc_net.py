@@ -173,6 +173,7 @@ class FullyConnectedNet(object):
       if use_batchnorm and i != (self.num_layers-1):
         gamma_name = 'gamma' + str(i+1)
         beta_name = 'beta' + str(i+1)
+        print(beta_name)
         self.params[gamma_name] = np.ones(modif_hidden_dims[i])
         self.params[beta_name] = np.zeros(modif_hidden_dims[i])
 
